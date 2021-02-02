@@ -1,0 +1,1602 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "vramsdfact"
+		},
+		"EapStorageAdlsPoc1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'EapStorageAdlsPoc1'"
+		},
+		"EapStorageAdlsPoc1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://vramsdlake.dfs.core.windows.net"
+		},
+		"NoaaDataService_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://www.ncei.noaa.gov/data/"
+		},
+		"NoaaIsdFtpSvc_properties_typeProperties_host": {
+			"type": "string",
+			"defaultValue": "ftp://ftp.ncdc.noaa.gov"
+		},
+		"NoaaIsdServer_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://www.ncei.noaa.gov/data/global-hourly/access/"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaIsdBulkCopy')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "NoaaIsdBulkCopyForEachYearLoop",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "SetYearArray",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@variables('YearArray')",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "CopyNoaaIsdData",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "HttpReadSettings",
+												"requestMethod": "GET"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "FlattenHierarchy"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ""
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "NoaaIsdCsvSrc",
+											"type": "DatasetReference",
+											"parameters": {
+												"year": {
+													"value": "@item()",
+													"type": "Expression"
+												},
+												"station": {
+													"value": "@variables('StationId')",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "NoaaIsdCsvSink",
+											"type": "DatasetReference",
+											"parameters": {
+												"station": {
+													"value": "@variables('StationId')",
+													"type": "Expression"
+												},
+												"year": {
+													"value": "@item()",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"name": "SetYearArray",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "SetStationId",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "YearArray",
+							"value": {
+								"value": "@range(pipeline().parameters.StartYear, add(sub(pipeline().parameters.EndYear, pipeline().parameters.StartYear),1))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "SetStationId",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "StationId",
+							"value": "01001099999"
+						}
+					}
+				],
+				"parameters": {
+					"StartYear": {
+						"type": "int",
+						"defaultValue": 1901
+					},
+					"EndYear": {
+						"type": "int",
+						"defaultValue": 2019
+					}
+				},
+				"variables": {
+					"YearArray": {
+						"type": "Array"
+					},
+					"StationId": {
+						"type": "String",
+						"defaultValue": "01001099999"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-01-25T21:16:38Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdCsvSrc')]",
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdCsvSink')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdArrayCopy')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "SetStationArray",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "StationArray",
+							"value": {
+								"value": "\n@createArray('01106099999',\n'01262099999',\n'01403099999',\n'01427099999',\n'03091099999',\n'03262099999',\n'03302099999',\n'03497099999',\n'03804099999',\n'03953099999',\n'03980099999',\n'06041099999',\n'06081099999',\n'06310099999',\n'07005099999',\n'07150099999',\n'07180099999',\n'10002099999',\n'10147099999',\n'10338099999',\n'10419099999',\n'10427099999',\n'10440099999',\n'10449099999',\n'10453099999',\n'10501099999',\n'10548099999',\n'10549099999',\n'10635099999',\n'10637099999',\n'10856099999',\n'10865099999',\n'12205099999',\n'12375099999',\n'12425099999',\n'13586099999',\n'16120099999',\n'16240099999',\n'26422099999',\n'26447099999',\n'26702099999',\n'33393099999')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "NoaaIsdStationCopy",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "SetStationArray",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@variables('StationArray')",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "ExecuteStationCopy",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "NoaaIsdStationCopy",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"StartYear": {
+												"value": "@pipeline().parameters.StartYear",
+												"type": "Expression"
+											},
+											"EndYear": {
+												"value": "@pipeline().parameters.EndYear",
+												"type": "Expression"
+											},
+											"StationId": {
+												"value": "@item()",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"parameters": {
+					"StartYear": {
+						"type": "int",
+						"defaultValue": 1901
+					},
+					"EndYear": {
+						"type": "int",
+						"defaultValue": 1903
+					}
+				},
+				"variables": {
+					"StationArray": {
+						"type": "Array"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-02-01T21:34:41Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/NoaaIsdStationCopy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdOptimiseStations')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "NoaaIsdOptimiseStations",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "NoaaIsdOptimiseStations",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"StationsRaw": {},
+									"StationsOptimised": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-01-25T21:16:38Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/NoaaIsdOptimiseStations')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationCopy')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Copies data for the year range and station specified by calling pipeline.\nSetFailure is an attempt to trap failures, so overall pipeline doesn't fail.",
+				"activities": [
+					{
+						"name": "NoaaIsdBulkCopyForEachYearLoop",
+						"description": "Calls data copy for the specific station for each year in the range specified.",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "SetYearArray",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@variables('YearArray')",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "CopyNoaaIsdData",
+									"description": "Copies the file for the specified station and year from the NOAA HTTP server to the ADLS data lake.",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "HttpReadSettings",
+												"requestMethod": "GET"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "FlattenHierarchy"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ""
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "NoaaIsdCsvSrc",
+											"type": "DatasetReference",
+											"parameters": {
+												"year": {
+													"value": "@item()",
+													"type": "Expression"
+												},
+												"station": {
+													"value": "@pipeline().parameters.StationId",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "NoaaIsdCsvSink",
+											"type": "DatasetReference",
+											"parameters": {
+												"station": {
+													"value": "@pipeline().parameters.StationId",
+													"type": "Expression"
+												},
+												"year": {
+													"value": "@item()",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"name": "SetYearArray",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "YearArray",
+							"value": {
+								"value": "@range(pipeline().parameters.StartYear, add(sub(pipeline().parameters.EndYear, pipeline().parameters.StartYear),1))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "SetFailure",
+						"description": "Added to try to suppress errors",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "NoaaIsdBulkCopyForEachYearLoop",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "Failure",
+							"value": {
+								"value": "@bool(1)",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"concurrency": 5,
+				"parameters": {
+					"StartYear": {
+						"type": "int",
+						"defaultValue": 1901
+					},
+					"EndYear": {
+						"type": "int",
+						"defaultValue": 2019
+					},
+					"StationId": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"YearArray": {
+						"type": "Array"
+					},
+					"Failure": {
+						"type": "Boolean"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-01-25T21:16:38Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdCsvSrc')]",
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdCsvSink')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationInventoryCopy')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Copies station inventory from NOAA FTP server to ADLS data lake.\nRun through debug to update the file.",
+				"activities": [
+					{
+						"name": "NoaaIsdStationInventoryCopy",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "FtpReadSettings",
+									"recursive": false,
+									"useBinaryTransfer": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ""
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "NoaaIsdStationInventoryCsvSrc",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "NoaaIsdStationInventoryCsvSink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-01-25T21:16:37Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdStationInventoryCsvSrc')]",
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdStationInventoryCsvSink')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationListCopy')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Drives the copy from the station metadata",
+				"activities": [
+					{
+						"name": "SetStationArray",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "StationArray",
+							"value": {
+								"value": "@createArray('02907099999', '02950099999')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "NoaaIsdStationCopy",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "SetStationArray",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@variables('StationArray')",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "ExecuteStationCopy",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "NoaaIsdStationCopy",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"StartYear": {
+												"value": "@pipeline().parameters.StartYear",
+												"type": "Expression"
+											},
+											"EndYear": {
+												"value": "@pipeline().parameters.EndYear",
+												"type": "Expression"
+											},
+											"StationId": {
+												"value": "@item()",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"parameters": {
+					"StartYear": {
+						"type": "int",
+						"defaultValue": 1901
+					},
+					"EndYear": {
+						"type": "int",
+						"defaultValue": 1903
+					}
+				},
+				"variables": {
+					"StationArray": {
+						"type": "Array"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-01-25T21:16:39Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/NoaaIsdStationCopy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationMetadataCopy')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Copies station metadata from NOAA FTP server to ADLS data lake.\nRun through debug to update the file.",
+				"activities": [
+					{
+						"name": "NoaaIsdStationHistoryCopy",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "FtpReadSettings",
+									"recursive": false,
+									"useBinaryTransfer": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ""
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "NoaaIsdStationMetadataCsvSrc",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "NoaaIsdStationMetadataCsvSink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-01-25T21:16:37Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdStationMetadataCsvSrc')]",
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdStationMetadataCsvSink')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdCsvSink')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "EapStorageAdlsPoc1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"station": {
+						"type": "string",
+						"defaultValue": "1901"
+					},
+					"year": {
+						"type": "string",
+						"defaultValue": "007018999999"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@concat(dataset().station, '_', dataset().year, '.csv')",
+							"type": "Expression"
+						},
+						"folderPath": "noaa/isd/hourly-data/raw",
+						"fileSystem": "lake"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "STATION",
+						"type": "String"
+					},
+					{
+						"name": "DATE",
+						"type": "String"
+					},
+					{
+						"name": "SOURCE",
+						"type": "String"
+					},
+					{
+						"name": "LATITUDE",
+						"type": "String"
+					},
+					{
+						"name": "LONGITUDE",
+						"type": "String"
+					},
+					{
+						"name": "ELEVATION",
+						"type": "String"
+					},
+					{
+						"name": "NAME",
+						"type": "String"
+					},
+					{
+						"name": "REPORT_TYPE",
+						"type": "String"
+					},
+					{
+						"name": "CALL_SIGN",
+						"type": "String"
+					},
+					{
+						"name": "QUALITY_CONTROL",
+						"type": "String"
+					},
+					{
+						"name": "WND",
+						"type": "String"
+					},
+					{
+						"name": "CIG",
+						"type": "String"
+					},
+					{
+						"name": "VIS",
+						"type": "String"
+					},
+					{
+						"name": "TMP",
+						"type": "String"
+					},
+					{
+						"name": "DEW",
+						"type": "String"
+					},
+					{
+						"name": "SLP",
+						"type": "String"
+					},
+					{
+						"name": "AA1",
+						"type": "String"
+					},
+					{
+						"name": "AA2",
+						"type": "String"
+					},
+					{
+						"name": "AJ1",
+						"type": "String"
+					},
+					{
+						"name": "AY1",
+						"type": "String"
+					},
+					{
+						"name": "AY2",
+						"type": "String"
+					},
+					{
+						"name": "GA1",
+						"type": "String"
+					},
+					{
+						"name": "GA2",
+						"type": "String"
+					},
+					{
+						"name": "GA3",
+						"type": "String"
+					},
+					{
+						"name": "GE1",
+						"type": "String"
+					},
+					{
+						"name": "GF1",
+						"type": "String"
+					},
+					{
+						"name": "IA1",
+						"type": "String"
+					},
+					{
+						"name": "KA1",
+						"type": "String"
+					},
+					{
+						"name": "KA2",
+						"type": "String"
+					},
+					{
+						"name": "MA1",
+						"type": "String"
+					},
+					{
+						"name": "MD1",
+						"type": "String"
+					},
+					{
+						"name": "MW1",
+						"type": "String"
+					},
+					{
+						"name": "OC1",
+						"type": "String"
+					},
+					{
+						"name": "OD1",
+						"type": "String"
+					},
+					{
+						"name": "SA1",
+						"type": "String"
+					},
+					{
+						"name": "UA1",
+						"type": "String"
+					},
+					{
+						"name": "REM",
+						"type": "String"
+					},
+					{
+						"name": "EQD",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/EapStorageAdlsPoc1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdCsvSrc')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "NoaaDataService",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"year": {
+						"type": "int",
+						"defaultValue": 1901
+					},
+					"station": {
+						"type": "string",
+						"defaultValue": "029070999999"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation",
+						"relativeUrl": {
+							"value": "@concat('global-hourly/access/', string(dataset().year), '/', dataset().station, '.csv')",
+							"type": "Expression"
+						}
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "STATION",
+						"type": "String"
+					},
+					{
+						"name": "DATE",
+						"type": "String"
+					},
+					{
+						"name": "SOURCE",
+						"type": "String"
+					},
+					{
+						"name": "LATITUDE",
+						"type": "String"
+					},
+					{
+						"name": "LONGITUDE",
+						"type": "String"
+					},
+					{
+						"name": "ELEVATION",
+						"type": "String"
+					},
+					{
+						"name": "NAME",
+						"type": "String"
+					},
+					{
+						"name": "REPORT_TYPE",
+						"type": "String"
+					},
+					{
+						"name": "CALL_SIGN",
+						"type": "String"
+					},
+					{
+						"name": "QUALITY_CONTROL",
+						"type": "String"
+					},
+					{
+						"name": "WND",
+						"type": "String"
+					},
+					{
+						"name": "CIG",
+						"type": "String"
+					},
+					{
+						"name": "VIS",
+						"type": "String"
+					},
+					{
+						"name": "TMP",
+						"type": "String"
+					},
+					{
+						"name": "DEW",
+						"type": "String"
+					},
+					{
+						"name": "SLP",
+						"type": "String"
+					},
+					{
+						"name": "GF1",
+						"type": "String"
+					},
+					{
+						"name": "MW1",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/NoaaDataService')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdHourlyDataSet')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "NoaaIsdServer",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation",
+						"relativeUrl": "1901/*.csv"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "STATION",
+						"type": "String"
+					},
+					{
+						"name": "DATE",
+						"type": "String"
+					},
+					{
+						"name": "SOURCE",
+						"type": "String"
+					},
+					{
+						"name": "LATITUDE",
+						"type": "String"
+					},
+					{
+						"name": "LONGITUDE",
+						"type": "String"
+					},
+					{
+						"name": "ELEVATION",
+						"type": "String"
+					},
+					{
+						"name": "NAME",
+						"type": "String"
+					},
+					{
+						"name": "REPORT_TYPE",
+						"type": "String"
+					},
+					{
+						"name": "CALL_SIGN",
+						"type": "String"
+					},
+					{
+						"name": "QUALITY_CONTROL",
+						"type": "String"
+					},
+					{
+						"name": "WND",
+						"type": "String"
+					},
+					{
+						"name": "CIG",
+						"type": "String"
+					},
+					{
+						"name": "VIS",
+						"type": "String"
+					},
+					{
+						"name": "TMP",
+						"type": "String"
+					},
+					{
+						"name": "DEW",
+						"type": "String"
+					},
+					{
+						"name": "SLP",
+						"type": "String"
+					},
+					{
+						"name": "AA1",
+						"type": "String"
+					},
+					{
+						"name": "AA2",
+						"type": "String"
+					},
+					{
+						"name": "AJ1",
+						"type": "String"
+					},
+					{
+						"name": "AY1",
+						"type": "String"
+					},
+					{
+						"name": "AY2",
+						"type": "String"
+					},
+					{
+						"name": "GA1",
+						"type": "String"
+					},
+					{
+						"name": "GA2",
+						"type": "String"
+					},
+					{
+						"name": "GA3",
+						"type": "String"
+					},
+					{
+						"name": "GE1",
+						"type": "String"
+					},
+					{
+						"name": "GF1",
+						"type": "String"
+					},
+					{
+						"name": "IA1",
+						"type": "String"
+					},
+					{
+						"name": "KA1",
+						"type": "String"
+					},
+					{
+						"name": "KA2",
+						"type": "String"
+					},
+					{
+						"name": "MA1",
+						"type": "String"
+					},
+					{
+						"name": "MD1",
+						"type": "String"
+					},
+					{
+						"name": "MW1",
+						"type": "String"
+					},
+					{
+						"name": "OC1",
+						"type": "String"
+					},
+					{
+						"name": "OD1",
+						"type": "String"
+					},
+					{
+						"name": "SA1",
+						"type": "String"
+					},
+					{
+						"name": "UA1",
+						"type": "String"
+					},
+					{
+						"name": "REM",
+						"type": "String"
+					},
+					{
+						"name": "EQD",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/NoaaIsdServer')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationInventoryCsvSink')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "EapStorageAdlsPoc1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "noaa/isd/station-inventory/raw",
+						"fileSystem": "lake"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/EapStorageAdlsPoc1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationInventoryCsvSrc')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "NoaaIsdFtpSvc",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "FtpServerLocation",
+						"fileName": "isd-inventory.csv",
+						"folderPath": "pub/data/noaa"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "USAF",
+						"type": "String"
+					},
+					{
+						"name": "WBAN",
+						"type": "String"
+					},
+					{
+						"name": "YEAR",
+						"type": "String"
+					},
+					{
+						"name": "JAN",
+						"type": "String"
+					},
+					{
+						"name": "FEB",
+						"type": "String"
+					},
+					{
+						"name": "MAR",
+						"type": "String"
+					},
+					{
+						"name": "APR",
+						"type": "String"
+					},
+					{
+						"name": "MAY",
+						"type": "String"
+					},
+					{
+						"name": "JUN",
+						"type": "String"
+					},
+					{
+						"name": "JUL",
+						"type": "String"
+					},
+					{
+						"name": "AUG",
+						"type": "String"
+					},
+					{
+						"name": "SEP",
+						"type": "String"
+					},
+					{
+						"name": "OCT",
+						"type": "String"
+					},
+					{
+						"name": "NOV",
+						"type": "String"
+					},
+					{
+						"name": "DEC",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/NoaaIsdFtpSvc')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationMetadataCsvSink')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "EapStorageAdlsPoc1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "noaa/isd/station-data/raw",
+						"fileSystem": "lake"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "USAF",
+						"type": "String"
+					},
+					{
+						"name": "WBAN",
+						"type": "String"
+					},
+					{
+						"name": "STATION NAME",
+						"type": "String"
+					},
+					{
+						"name": "CTRY",
+						"type": "String"
+					},
+					{
+						"name": "STATE",
+						"type": "String"
+					},
+					{
+						"name": "ICAO",
+						"type": "String"
+					},
+					{
+						"name": "LAT",
+						"type": "String"
+					},
+					{
+						"name": "LON",
+						"type": "String"
+					},
+					{
+						"name": "ELEV(M)",
+						"type": "String"
+					},
+					{
+						"name": "BEGIN",
+						"type": "String"
+					},
+					{
+						"name": "END",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/EapStorageAdlsPoc1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationMetadataCsvSrc')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "NoaaIsdFtpSvc",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "FtpServerLocation",
+						"fileName": "isd-history.csv",
+						"folderPath": "pub/data/noaa"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "USAF",
+						"type": "String"
+					},
+					{
+						"name": "WBAN",
+						"type": "String"
+					},
+					{
+						"name": "STATION NAME",
+						"type": "String"
+					},
+					{
+						"name": "CTRY",
+						"type": "String"
+					},
+					{
+						"name": "STATE",
+						"type": "String"
+					},
+					{
+						"name": "ICAO",
+						"type": "String"
+					},
+					{
+						"name": "LAT",
+						"type": "String"
+					},
+					{
+						"name": "LON",
+						"type": "String"
+					},
+					{
+						"name": "ELEV(M)",
+						"type": "String"
+					},
+					{
+						"name": "BEGIN",
+						"type": "String"
+					},
+					{
+						"name": "END",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/NoaaIsdFtpSvc')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdStationMetadataParq')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "EapStorageAdlsPoc1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "noaa/isd/station-data/opt",
+						"fileSystem": "lake"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/EapStorageAdlsPoc1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/EapStorageAdlsPoc1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('EapStorageAdlsPoc1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('EapStorageAdlsPoc1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaDataService')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "HttpServer",
+				"typeProperties": {
+					"url": "[parameters('NoaaDataService_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdFtpSvc')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "FtpServer",
+				"typeProperties": {
+					"host": "[parameters('NoaaIsdFtpSvc_properties_typeProperties_host')]",
+					"port": 21,
+					"enableSsl": false,
+					"enableServerCertificateValidation": false,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdServer')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "HttpServer",
+				"typeProperties": {
+					"url": "[parameters('NoaaIsdServer_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NoaaIsdOptimiseStations')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "NoaaIsdStationMetadataCsvSink",
+								"type": "DatasetReference"
+							},
+							"name": "StationsRaw"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "NoaaIsdStationMetadataParq",
+								"type": "DatasetReference"
+							},
+							"name": "StationsOptimised"
+						}
+					],
+					"transformations": [
+						{
+							"name": "StationId"
+						},
+						{
+							"name": "RemoveInvalidColumns"
+						}
+					],
+					"script": "source(output(\n\t\tUSAF as string,\n\t\tWBAN as string,\n\t\t{STATION NAME} as string,\n\t\tCTRY as string,\n\t\tSTATE as string,\n\t\tICAO as string,\n\t\tLAT as double,\n\t\tLON as double,\n\t\t{ELEV(M)} as double,\n\t\tBEGIN as date,\n\t\tEND as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> StationsRaw\nStationsRaw derive(STATION = concat(USAF,WBAN),\n\t\tSTATION_NAME = {STATION NAME},\n\t\tELEV = {ELEV(M)}) ~> StationId\nStationId select(mapColumn(\n\t\tUSAF,\n\t\tWBAN,\n\t\tCTRY,\n\t\tSTATE,\n\t\tICAO,\n\t\tLAT,\n\t\tLON,\n\t\tBEGIN,\n\t\tEND,\n\t\tSTATION,\n\t\tSTATION_NAME,\n\t\tELEV\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveInvalidColumns\nRemoveInvalidColumns sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\tpartitionFileNames:['station-data'],\n\ttruncate: true,\n\tpartitionBy('hash', 1)) ~> StationsOptimised"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdStationMetadataCsvSink')]",
+				"[concat(variables('factoryId'), '/datasets/NoaaIsdStationMetadataParq')]"
+			]
+		}
+	]
+}

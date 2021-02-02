@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "vramsdfact"
+		},
+		"EapStorageAdlsPoc1_accountKey": {
+			"value": ""
+		},
+		"EapStorageAdlsPoc1_properties_typeProperties_url": {
+			"value": "https://vramsdlake.dfs.core.windows.net"
+		},
+		"NoaaDataService_properties_typeProperties_url": {
+			"value": "https://www.ncei.noaa.gov/data/"
+		},
+		"NoaaIsdFtpSvc_properties_typeProperties_host": {
+			"value": "ftp://ftp.ncdc.noaa.gov"
+		},
+		"NoaaIsdServer_properties_typeProperties_url": {
+			"value": "https://www.ncei.noaa.gov/data/global-hourly/access/"
+		}
+	}
+}
