@@ -1,0 +1,35 @@
+{
+	"name": "NoaaIsdOptimiseStations",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "NoaaIsdStationMetadataCsvSink",
+						"type": "DatasetReference"
+					},
+					"name": "StationsRaw"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "NoaaIsdStationMetadataParq",
+						"type": "DatasetReference"
+					},
+					"name": "StationsOptimised"
+				}
+			],
+			"transformations": [
+				{
+					"name": "StationId"
+				},
+				{
+					"name": "RemoveInvalidColumns"
+				}
+			],
+			"script": "source(output(\n\t\tUSAF as string,\n\t\tWBAN as string,\n\t\t{STATION NAME} as string,\n\t\tCTRY as string,\n\t\tSTATE as string,\n\t\tICAO as string,\n\t\tLAT as double,\n\t\tLON as double,\n\t\t{ELEV(M)} as double,\n\t\tBEGIN as date,\n\t\tEND as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> StationsRaw\nStationsRaw derive(STATION = concat(USAF,WBAN),\n\t\tSTATION_NAME = {STATION NAME},\n\t\tELEV = {ELEV(M)}) ~> StationId\nStationId select(mapColumn(\n\t\tUSAF,\n\t\tWBAN,\n\t\tCTRY,\n\t\tSTATE,\n\t\tICAO,\n\t\tLAT,\n\t\tLON,\n\t\tBEGIN,\n\t\tEND,\n\t\tSTATION,\n\t\tSTATION_NAME,\n\t\tELEV\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveInvalidColumns\nRemoveInvalidColumns sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\tpartitionFileNames:['station-data'],\n\ttruncate: true,\n\tpartitionBy('hash', 1)) ~> StationsOptimised"
+		}
+	}
+}

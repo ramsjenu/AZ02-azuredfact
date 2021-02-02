@@ -1,0 +1,85 @@
+{
+	"name": "NoaaIsdStationInventoryCsvSrc",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "NoaaIsdFtpSvc",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "FtpServerLocation",
+				"fileName": "isd-inventory.csv",
+				"folderPath": "pub/data/noaa"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "USAF",
+				"type": "String"
+			},
+			{
+				"name": "WBAN",
+				"type": "String"
+			},
+			{
+				"name": "YEAR",
+				"type": "String"
+			},
+			{
+				"name": "JAN",
+				"type": "String"
+			},
+			{
+				"name": "FEB",
+				"type": "String"
+			},
+			{
+				"name": "MAR",
+				"type": "String"
+			},
+			{
+				"name": "APR",
+				"type": "String"
+			},
+			{
+				"name": "MAY",
+				"type": "String"
+			},
+			{
+				"name": "JUN",
+				"type": "String"
+			},
+			{
+				"name": "JUL",
+				"type": "String"
+			},
+			{
+				"name": "AUG",
+				"type": "String"
+			},
+			{
+				"name": "SEP",
+				"type": "String"
+			},
+			{
+				"name": "OCT",
+				"type": "String"
+			},
+			{
+				"name": "NOV",
+				"type": "String"
+			},
+			{
+				"name": "DEC",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

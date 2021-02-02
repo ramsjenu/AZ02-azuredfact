@@ -1,0 +1,88 @@
+{
+	"name": "NoaaIsdStationListCopy",
+	"properties": {
+		"description": "Drives the copy from the station metadata",
+		"activities": [
+			{
+				"name": "SetStationArray",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "StationArray",
+					"value": {
+						"value": "@createArray('02907099999', '02950099999')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "NoaaIsdStationCopy",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "SetStationArray",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('StationArray')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "ExecuteStationCopy",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "NoaaIsdStationCopy",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"StartYear": {
+										"value": "@pipeline().parameters.StartYear",
+										"type": "Expression"
+									},
+									"EndYear": {
+										"value": "@pipeline().parameters.EndYear",
+										"type": "Expression"
+									},
+									"StationId": {
+										"value": "@item()",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"StartYear": {
+				"type": "int",
+				"defaultValue": 1901
+			},
+			"EndYear": {
+				"type": "int",
+				"defaultValue": 1903
+			}
+		},
+		"variables": {
+			"StationArray": {
+				"type": "Array"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-01-25T21:16:39Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

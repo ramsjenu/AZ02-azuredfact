@@ -1,0 +1,109 @@
+{
+	"name": "NoaaIsdCsvSrc",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "NoaaDataService",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"year": {
+				"type": "int",
+				"defaultValue": 1901
+			},
+			"station": {
+				"type": "string",
+				"defaultValue": "029070999999"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": {
+					"value": "@concat('global-hourly/access/', string(dataset().year), '/', dataset().station, '.csv')",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "STATION",
+				"type": "String"
+			},
+			{
+				"name": "DATE",
+				"type": "String"
+			},
+			{
+				"name": "SOURCE",
+				"type": "String"
+			},
+			{
+				"name": "LATITUDE",
+				"type": "String"
+			},
+			{
+				"name": "LONGITUDE",
+				"type": "String"
+			},
+			{
+				"name": "ELEVATION",
+				"type": "String"
+			},
+			{
+				"name": "NAME",
+				"type": "String"
+			},
+			{
+				"name": "REPORT_TYPE",
+				"type": "String"
+			},
+			{
+				"name": "CALL_SIGN",
+				"type": "String"
+			},
+			{
+				"name": "QUALITY_CONTROL",
+				"type": "String"
+			},
+			{
+				"name": "WND",
+				"type": "String"
+			},
+			{
+				"name": "CIG",
+				"type": "String"
+			},
+			{
+				"name": "VIS",
+				"type": "String"
+			},
+			{
+				"name": "TMP",
+				"type": "String"
+			},
+			{
+				"name": "DEW",
+				"type": "String"
+			},
+			{
+				"name": "SLP",
+				"type": "String"
+			},
+			{
+				"name": "GF1",
+				"type": "String"
+			},
+			{
+				"name": "MW1",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

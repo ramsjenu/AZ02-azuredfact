@@ -1,0 +1,191 @@
+{
+	"name": "NoaaIsdCsvSink",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "EapStorageAdlsPoc1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"station": {
+				"type": "string",
+				"defaultValue": "1901"
+			},
+			"year": {
+				"type": "string",
+				"defaultValue": "007018999999"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@concat(dataset().station, '_', dataset().year, '.csv')",
+					"type": "Expression"
+				},
+				"folderPath": "noaa/isd/hourly-data/raw",
+				"fileSystem": "lake"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "STATION",
+				"type": "String"
+			},
+			{
+				"name": "DATE",
+				"type": "String"
+			},
+			{
+				"name": "SOURCE",
+				"type": "String"
+			},
+			{
+				"name": "LATITUDE",
+				"type": "String"
+			},
+			{
+				"name": "LONGITUDE",
+				"type": "String"
+			},
+			{
+				"name": "ELEVATION",
+				"type": "String"
+			},
+			{
+				"name": "NAME",
+				"type": "String"
+			},
+			{
+				"name": "REPORT_TYPE",
+				"type": "String"
+			},
+			{
+				"name": "CALL_SIGN",
+				"type": "String"
+			},
+			{
+				"name": "QUALITY_CONTROL",
+				"type": "String"
+			},
+			{
+				"name": "WND",
+				"type": "String"
+			},
+			{
+				"name": "CIG",
+				"type": "String"
+			},
+			{
+				"name": "VIS",
+				"type": "String"
+			},
+			{
+				"name": "TMP",
+				"type": "String"
+			},
+			{
+				"name": "DEW",
+				"type": "String"
+			},
+			{
+				"name": "SLP",
+				"type": "String"
+			},
+			{
+				"name": "AA1",
+				"type": "String"
+			},
+			{
+				"name": "AA2",
+				"type": "String"
+			},
+			{
+				"name": "AJ1",
+				"type": "String"
+			},
+			{
+				"name": "AY1",
+				"type": "String"
+			},
+			{
+				"name": "AY2",
+				"type": "String"
+			},
+			{
+				"name": "GA1",
+				"type": "String"
+			},
+			{
+				"name": "GA2",
+				"type": "String"
+			},
+			{
+				"name": "GA3",
+				"type": "String"
+			},
+			{
+				"name": "GE1",
+				"type": "String"
+			},
+			{
+				"name": "GF1",
+				"type": "String"
+			},
+			{
+				"name": "IA1",
+				"type": "String"
+			},
+			{
+				"name": "KA1",
+				"type": "String"
+			},
+			{
+				"name": "KA2",
+				"type": "String"
+			},
+			{
+				"name": "MA1",
+				"type": "String"
+			},
+			{
+				"name": "MD1",
+				"type": "String"
+			},
+			{
+				"name": "MW1",
+				"type": "String"
+			},
+			{
+				"name": "OC1",
+				"type": "String"
+			},
+			{
+				"name": "OD1",
+				"type": "String"
+			},
+			{
+				"name": "SA1",
+				"type": "String"
+			},
+			{
+				"name": "UA1",
+				"type": "String"
+			},
+			{
+				"name": "REM",
+				"type": "String"
+			},
+			{
+				"name": "EQD",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

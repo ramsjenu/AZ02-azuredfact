@@ -1,0 +1,24 @@
+{
+	"name": "NoaaIsdStationInventoryCsvSink",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "EapStorageAdlsPoc1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "noaa/isd/station-inventory/raw",
+				"fileSystem": "lake"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

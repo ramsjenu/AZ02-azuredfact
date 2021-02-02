@@ -1,0 +1,69 @@
+{
+	"name": "NoaaIsdStationMetadataCsvSrc",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "NoaaIsdFtpSvc",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "FtpServerLocation",
+				"fileName": "isd-history.csv",
+				"folderPath": "pub/data/noaa"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "USAF",
+				"type": "String"
+			},
+			{
+				"name": "WBAN",
+				"type": "String"
+			},
+			{
+				"name": "STATION NAME",
+				"type": "String"
+			},
+			{
+				"name": "CTRY",
+				"type": "String"
+			},
+			{
+				"name": "STATE",
+				"type": "String"
+			},
+			{
+				"name": "ICAO",
+				"type": "String"
+			},
+			{
+				"name": "LAT",
+				"type": "String"
+			},
+			{
+				"name": "LON",
+				"type": "String"
+			},
+			{
+				"name": "ELEV(M)",
+				"type": "String"
+			},
+			{
+				"name": "BEGIN",
+				"type": "String"
+			},
+			{
+				"name": "END",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

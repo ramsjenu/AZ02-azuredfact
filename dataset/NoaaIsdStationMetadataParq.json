@@ -1,0 +1,21 @@
+{
+	"name": "NoaaIsdStationMetadataParq",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "EapStorageAdlsPoc1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "noaa/isd/station-data/opt",
+				"fileSystem": "lake"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

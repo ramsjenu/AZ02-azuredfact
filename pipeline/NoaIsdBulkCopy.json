@@ -1,0 +1,151 @@
+{
+	"name": "NoaIsdBulkCopy",
+	"properties": {
+		"activities": [
+			{
+				"name": "NoaaIsdBulkCopyForEachYearLoop",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "SetYearArray",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('YearArray')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "CopyNoaaIsdData",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "HttpReadSettings",
+										"requestMethod": "GET"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "FlattenHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ""
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "NoaaIsdCsvSrc",
+									"type": "DatasetReference",
+									"parameters": {
+										"year": {
+											"value": "@item()",
+											"type": "Expression"
+										},
+										"station": {
+											"value": "@variables('StationId')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "NoaaIsdCsvSink",
+									"type": "DatasetReference",
+									"parameters": {
+										"station": {
+											"value": "@variables('StationId')",
+											"type": "Expression"
+										},
+										"year": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "SetYearArray",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SetStationId",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "YearArray",
+					"value": {
+						"value": "@range(pipeline().parameters.StartYear, add(sub(pipeline().parameters.EndYear, pipeline().parameters.StartYear),1))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetStationId",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "StationId",
+					"value": "01001099999"
+				}
+			}
+		],
+		"parameters": {
+			"StartYear": {
+				"type": "int",
+				"defaultValue": 1901
+			},
+			"EndYear": {
+				"type": "int",
+				"defaultValue": 2019
+			}
+		},
+		"variables": {
+			"YearArray": {
+				"type": "Array"
+			},
+			"StationId": {
+				"type": "String",
+				"defaultValue": "01001099999"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-01-25T21:16:38Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

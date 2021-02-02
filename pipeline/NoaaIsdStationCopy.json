@@ -1,0 +1,161 @@
+{
+	"name": "NoaaIsdStationCopy",
+	"properties": {
+		"description": "Copies data for the year range and station specified by calling pipeline.\nSetFailure is an attempt to trap failures, so overall pipeline doesn't fail.",
+		"activities": [
+			{
+				"name": "NoaaIsdBulkCopyForEachYearLoop",
+				"description": "Calls data copy for the specific station for each year in the range specified.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "SetYearArray",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('YearArray')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "CopyNoaaIsdData",
+							"description": "Copies the file for the specified station and year from the NOAA HTTP server to the ADLS data lake.",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "HttpReadSettings",
+										"requestMethod": "GET"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "FlattenHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ""
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "NoaaIsdCsvSrc",
+									"type": "DatasetReference",
+									"parameters": {
+										"year": {
+											"value": "@item()",
+											"type": "Expression"
+										},
+										"station": {
+											"value": "@pipeline().parameters.StationId",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "NoaaIsdCsvSink",
+									"type": "DatasetReference",
+									"parameters": {
+										"station": {
+											"value": "@pipeline().parameters.StationId",
+											"type": "Expression"
+										},
+										"year": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "SetYearArray",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "YearArray",
+					"value": {
+						"value": "@range(pipeline().parameters.StartYear, add(sub(pipeline().parameters.EndYear, pipeline().parameters.StartYear),1))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetFailure",
+				"description": "Added to try to suppress errors",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "NoaaIsdBulkCopyForEachYearLoop",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "Failure",
+					"value": {
+						"value": "@bool(1)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"concurrency": 5,
+		"parameters": {
+			"StartYear": {
+				"type": "int",
+				"defaultValue": 1901
+			},
+			"EndYear": {
+				"type": "int",
+				"defaultValue": 2019
+			},
+			"StationId": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"YearArray": {
+				"type": "Array"
+			},
+			"Failure": {
+				"type": "Boolean"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-01-25T21:16:38Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
