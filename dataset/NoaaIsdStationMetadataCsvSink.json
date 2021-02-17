@@ -2,7 +2,7 @@
 	"name": "NoaaIsdStationMetadataCsvSink",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "EapStorageAdlsPoc1",
+			"referenceName": "AzureDataLakeStorage1",
 			"type": "LinkedServiceReference"
 		},
 		"annotations": [],
