@@ -99,6 +99,7 @@
 			},
 			{
 				"name": "SetYearArray",
+				"description": "@createArray('2019')",
 				"type": "SetVariable",
 				"dependsOn": [],
 				"userProperties": [],
