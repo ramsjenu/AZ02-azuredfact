@@ -3,12 +3,71 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Set variable1",
+				"name": "Set Station Array",
 				"type": "SetVariable",
 				"dependsOn": [],
 				"userProperties": []
+			},
+			{
+				"name": "Year",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Set Station Array",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('StationArray')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy Station",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "NoaaIsdStationCopy",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"StartYear": {
+										"value": "@pipeline().parameters.StartYear",
+										"type": "Expression"
+									},
+									"EndYear": {
+										"value": "@pipeline().parameters.EndYear",
+										"type": "Expression"
+									},
+									"StationId": {
+										"value": "@item()",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
 			}
 		],
+		"parameters": {
+			"StartYear": {
+				"type": "int",
+				"defaultValue": 2021
+			},
+			"EndYear": {
+				"type": "int",
+				"defaultValue": 2001
+			}
+		},
 		"annotations": []
 	}
 }
