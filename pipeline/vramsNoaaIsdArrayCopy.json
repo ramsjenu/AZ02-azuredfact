@@ -77,7 +77,7 @@
 		},
 		"variables": {
 			"StationArray": {
-				"type": "String"
+				"type": "Array"
 			}
 		},
 		"annotations": []
