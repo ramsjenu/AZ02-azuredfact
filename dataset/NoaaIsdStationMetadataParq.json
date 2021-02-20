@@ -10,11 +10,11 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": "station-data",
+				"fileName": "station-data.csv",
 				"folderPath": "noaa/isd/station-data/opt",
 				"fileSystem": "lake"
 			},
-			"compressionCodec": "snappy"
+			"compressionCodec": "none"
 		},
 		"schema": []
 	},
