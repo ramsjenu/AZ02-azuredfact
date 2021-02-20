@@ -143,10 +143,7 @@
 				"type": "Array"
 			},
 			"StationId": {
-				"type": "Array",
-				"defaultValue": [
-					"01001099999"
-				]
+				"type": "Array"
 			}
 		},
 		"annotations": [],
