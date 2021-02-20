@@ -1,0 +1,151 @@
+{
+	"name": "vramsNoaIsdBulkCopy",
+	"properties": {
+		"activities": [
+			{
+				"name": "NoaaIsdBulkCopyForEachYearLoop",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "SetYearArray",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('YearArray')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "CopyNoaaIsdData",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "HttpReadSettings",
+										"requestMethod": "GET"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "FlattenHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ""
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "NoaaIsdCsvSrc",
+									"type": "DatasetReference",
+									"parameters": {
+										"year": {
+											"value": "@item()",
+											"type": "Expression"
+										},
+										"station": {
+											"value": "@variables('StationId')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "NoaaIsdCsvSink",
+									"type": "DatasetReference",
+									"parameters": {
+										"station": {
+											"value": "@variables('StationId')",
+											"type": "Expression"
+										},
+										"year": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "SetYearArray",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SetStationId",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "YearArray",
+					"value": {
+						"value": "@range(pipeline().parameters.StartYear, add(sub(pipeline().parameters.EndYear, pipeline().parameters.StartYear),1))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SetStationId",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "StationId",
+					"value": "('01106099999',\n'01262099999',\n'01403099999',\n'01427099999',\n'03091099999',\n'03262099999',\n'03302099999',\n'03497099999',\n'03804099999',\n'03953099999',\n'03980099999',\n'06041099999',\n'06081099999',\n'06310099999',\n'07005099999',\n'07150099999',\n'07180099999',\n'10002099999',\n'10147099999',\n'10338099999',\n'10419099999',\n'10427099999',\n'10440099999',\n'10449099999',\n'10453099999',\n'10501099999',\n'10548099999',\n'10549099999',\n'10635099999',\n'10637099999',\n'10856099999',\n'10865099999',\n'12205099999',\n'12375099999',\n'12425099999',\n'13586099999',\n'16120099999',\n'16240099999',\n'26422099999',\n'26447099999',\n'26702099999',\n'33393099999')"
+				}
+			}
+		],
+		"parameters": {
+			"StartYear": {
+				"type": "int",
+				"defaultValue": 1901
+			},
+			"EndYear": {
+				"type": "int",
+				"defaultValue": 2019
+			}
+		},
+		"variables": {
+			"YearArray": {
+				"type": "Array"
+			},
+			"StationId": {
+				"type": "String",
+				"defaultValue": "01001099999"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-01-25T21:16:38Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
