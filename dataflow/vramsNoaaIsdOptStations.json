@@ -18,7 +18,7 @@
 					"name": "StationID"
 				}
 			],
-			"script": "source(output(\n\t\tUSAF as string,\n\t\tWBAN as string,\n\t\t{STATION NAME} as string,\n\t\tCTRY as string,\n\t\tSTATE as string,\n\t\tICAO as string,\n\t\tLAT as double,\n\t\tLON as double,\n\t\t{ELEV(M)} as double,\n\t\tBEGIN as date,\n\t\tEND as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> StationRawData\nStationRawData derive(STATION = concat(USAF,WBAN),\n\t\tSTATION_NAME = {STATION NAME},\n\t\t{ELEV(M)} = {ELEV(M)}) ~> StationID"
+			"script": "source(output(\n\t\tUSAF as string,\n\t\tWBAN as string,\n\t\t{STATION NAME} as string,\n\t\tCTRY as string,\n\t\tSTATE as string,\n\t\tICAO as string,\n\t\tLAT as double,\n\t\tLON as double,\n\t\t{ELEV(M)} as double,\n\t\tBEGIN as date,\n\t\tEND as date\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> StationRawData\nStationRawData derive(STATION = concat(USAF,WBAN),\n\t\tSTATION_NAME = {STATION NAME},\n\t\tELEV = {ELEV(M)}) ~> StationID"
 		}
 	}
 }
