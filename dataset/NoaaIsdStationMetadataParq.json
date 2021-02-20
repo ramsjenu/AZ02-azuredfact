@@ -10,7 +10,6 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": "station-data.csv",
 				"folderPath": "noaa/isd/station-data/opt",
 				"fileSystem": "lake"
 			},
