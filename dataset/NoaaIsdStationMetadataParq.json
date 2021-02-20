@@ -13,7 +13,7 @@
 				"folderPath": "noaa/isd/station-data/opt",
 				"fileSystem": "lake"
 			},
-			"compressionCodec": "gzip"
+			"compressionCodec": "snappy"
 		},
 		"schema": []
 	},
